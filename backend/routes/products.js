@@ -1,4 +1,3 @@
-// routes/products.js
 import express from "express";
 import {
   getProducts,
@@ -6,9 +5,7 @@ import {
   createProductWithVariants,
   updateProduct,
   deleteProduct,
-  uploadImages
-} from "../controllers/productController.js";
-import {
+  uploadImages,
   getProductDetails,
   getProductReviews,
   getSimilarProducts,
@@ -17,24 +14,25 @@ import {
 
 import upload from "../middleware/upload.js";
 
-
 const router = express.Router();
 
-
-// Upload multiple images
+// Upload multiple images (Add Product)
 router.post("/upload", upload.array("images", 10), uploadImages);
 
+// Products
 router.get("/", getProducts);
 router.get("/:id", getProduct);
 router.post("/", createProductWithVariants);
-router.put("/:id", updateProduct);
+
+// 🔥 FIXED: Update with multiple images
+router.put("/:id", upload.array("images", 10), updateProduct);
+
 router.delete("/:id", deleteProduct);
+
+// Extra routes
 router.get("/:id/details", getProductDetails);
 router.get("/:id/reviews", getProductReviews);
 router.get("/:id/similar", getSimilarProducts);
 router.get("/:id/suggested", getSuggestedProducts);
-
-
-
 
 export default router;

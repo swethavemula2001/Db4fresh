@@ -2,6 +2,12 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function AddProduct() {
+  const navigate = useNavigate();
+  const token = localStorage.getItem("adminToken");
+
+  /* =============================
+     FORM STATE
+  ============================== */
   const [form, setForm] = useState({
     name: "",
     category: "",
@@ -12,22 +18,18 @@ export default function AddProduct() {
     highlights: "",
     return_policy: "",
     seller_id: "",
+
+    // ✅ FIXED: Dates added
+    manufactureDate: "",
+    expiryDate: "",
   });
 
-  // ⭐ Multiple images
+  /* =============================
+     IMAGES
+  ============================== */
   const [imageFiles, setImageFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
 
-  // ⭐ Product variants
-  const [variants, setVariants] = useState([
-    { variant_label: "", price: "", mrp: "", stock: "", sku: "" },
-  ]);
-  const navigate = useNavigate();
-const token = localStorage.getItem("adminToken");
-
-  /* =============================
-     IMAGE UPLOAD
-  ============================== */
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     setImageFiles(files);
@@ -35,30 +37,34 @@ const token = localStorage.getItem("adminToken");
   };
 
   const uploadImagesToBackend = async () => {
-  try {
-    const data = new FormData();
-    imageFiles.forEach((img) => data.append("images", img));
+    try {
+      const data = new FormData();
+      imageFiles.forEach((img) => data.append("images", img));
 
-    const res = await fetch("http://localhost:4000/api/products/upload", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: data,
-    });
+      const res = await fetch("http://localhost:4000/api/products/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: data,
+      });
 
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.images || [];
-  } catch (err) {
-    console.error("Upload error:", err);
-    return [];
-  }
-};
+      if (!res.ok) return [];
+      const json = await res.json();
+      return json.images || [];
+    } catch (err) {
+      console.error("Upload error:", err);
+      return [];
+    }
+  };
 
   /* =============================
-     VARIANT HANDLERS
+     VARIANTS
   ============================== */
+  const [variants, setVariants] = useState([
+    { variant_label: "", price: "", mrp: "", stock: "", sku: "" },
+  ]);
+
   const handleVariantChange = (idx, field, value) => {
     const updated = [...variants];
     updated[idx][field] = value;
@@ -83,11 +89,18 @@ const token = localStorage.getItem("adminToken");
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // ✅ Validation
+    if (new Date(form.expiryDate) <= new Date(form.manufactureDate)) {
+      alert("Expiry date must be after manufacture date");
+      return;
+    }
+
     let imageUrls = [];
     if (imageFiles.length > 0) {
       imageUrls = await uploadImagesToBackend();
     }
 
+    // ✅ FIXED PAYLOAD
     const payload = {
       name: form.name,
       category: form.category,
@@ -99,6 +112,10 @@ const token = localStorage.getItem("adminToken");
       highlights: form.highlights || null,
       return_policy: form.return_policy || null,
       seller_id: form.seller_id || null,
+
+      // ✅ IMPORTANT
+      manufacture_date: form.manufactureDate,
+      expiry_date: form.expiryDate,
 
       images: imageUrls,
       active: 1,
@@ -123,13 +140,12 @@ const token = localStorage.getItem("adminToken");
 
       const json = await res.json();
       if (!res.ok) {
-         alert(json.message || "Failed to add product");
-         return;
+        alert(json.message || "Failed to add product");
+        return;
       }
 
-        alert("✅ Product added successfully!");
-        navigate("/admin/products"); 
-
+      alert("✅ Product added successfully!");
+      navigate("/admin/products");
     } catch (err) {
       console.error(err);
       alert("Network error");
@@ -141,13 +157,9 @@ const token = localStorage.getItem("adminToken");
   ============================== */
   return (
     <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-red-600">
-        Add New Product
-      </h2>
+      <h2 className="text-2xl font-bold mb-6 text-red-600">Add New Product</h2>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-
-        {/* PRODUCT NAME */}
         <input
           type="text"
           placeholder="Product Name"
@@ -157,7 +169,6 @@ const token = localStorage.getItem("adminToken");
           required
         />
 
-        {/* CATEGORY */}
         <select
           className="w-full p-3 border rounded-lg"
           value={form.category}
@@ -172,19 +183,17 @@ const token = localStorage.getItem("adminToken");
           <option value="Beverages">Beverages</option>
         </select>
 
-        {/* BRAND */}
         <input
           type="text"
-          placeholder="Brand (e.g. Amul)"
+          placeholder="Brand"
           className="w-full p-3 border rounded-lg"
           value={form.brand}
           onChange={(e) => setForm({ ...form, brand: e.target.value })}
         />
 
-        {/* DESCRIPTION */}
         <textarea
           rows="3"
-          placeholder="Product Description"
+          placeholder="Description"
           className="w-full p-3 border rounded-lg"
           value={form.description}
           onChange={(e) =>
@@ -192,18 +201,16 @@ const token = localStorage.getItem("adminToken");
           }
         />
 
-        {/* WEIGHT + UNIT */}
         <div className="flex gap-3">
           <input
             type="number"
-            placeholder="Weight / Quantity"
+            placeholder="Weight"
             className="w-full p-3 border rounded-lg"
             value={form.weight}
             onChange={(e) =>
               setForm({ ...form, weight: e.target.value })
             }
           />
-
           <select
             className="w-full p-3 border rounded-lg"
             value={form.unit}
@@ -218,10 +225,36 @@ const token = localStorage.getItem("adminToken");
           </select>
         </div>
 
-        {/* HIGHLIGHTS */}
+        {/* ✅ DATES */}
+        <div>
+          <label>Date of Manufacture</label>
+          <input
+            type="date"
+            className="w-full p-3 border rounded-lg"
+            value={form.manufactureDate}
+            onChange={(e) =>
+              setForm({ ...form, manufactureDate: e.target.value })
+            }
+            required
+          />
+        </div>
+
+        <div>
+          <label>Expiry Date</label>
+          <input
+            type="date"
+            className="w-full p-3 border rounded-lg"
+            value={form.expiryDate}
+            onChange={(e) =>
+              setForm({ ...form, expiryDate: e.target.value })
+            }
+            required
+          />
+        </div>
+
         <textarea
-          rows="3"
-          placeholder="Key Highlights (use | to separate)"
+          rows="2"
+          placeholder="Highlights"
           className="w-full p-3 border rounded-lg"
           value={form.highlights}
           onChange={(e) =>
@@ -229,7 +262,6 @@ const token = localStorage.getItem("adminToken");
           }
         />
 
-        {/* RETURN POLICY */}
         <textarea
           rows="2"
           placeholder="Return Policy"
@@ -240,7 +272,6 @@ const token = localStorage.getItem("adminToken");
           }
         />
 
-        {/* SELLER */}
         <input
           type="text"
           placeholder="Seller ID"
@@ -251,41 +282,25 @@ const token = localStorage.getItem("adminToken");
           }
         />
 
-        {/* IMAGES */}
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleImageUpload}
-        />
+        <input type="file" multiple accept="image/*" onChange={handleImageUpload} />
 
-        {/* IMAGE PREVIEWS */}
         <div className="flex gap-2 flex-wrap">
           {previews.map((src, i) => (
-            <img
-              key={i}
-              src={src}
-              alt="preview"
-              className="w-20 h-20 object-cover rounded"
-            />
+            <img key={i} src={src} alt="preview" className="w-20 h-20 rounded" />
           ))}
         </div>
 
-        {/* VARIANTS */}
         <h3 className="font-semibold text-red-600">Variants</h3>
 
         {variants.map((v, idx) => (
           <div key={idx} className="border p-3 rounded space-y-2">
             <input
-              type="text"
-              placeholder="Variant Label (500 g, 1 kg)"
+              placeholder="Variant Label"
               value={v.variant_label}
               onChange={(e) =>
                 handleVariantChange(idx, "variant_label", e.target.value)
               }
-              required
             />
-
             <input
               type="number"
               placeholder="Price"
@@ -293,9 +308,7 @@ const token = localStorage.getItem("adminToken");
               onChange={(e) =>
                 handleVariantChange(idx, "price", e.target.value)
               }
-              required
             />
-
             <input
               type="number"
               placeholder="MRP"
@@ -304,7 +317,6 @@ const token = localStorage.getItem("adminToken");
                 handleVariantChange(idx, "mrp", e.target.value)
               }
             />
-
             <input
               type="number"
               placeholder="Stock"
@@ -313,9 +325,7 @@ const token = localStorage.getItem("adminToken");
                 handleVariantChange(idx, "stock", e.target.value)
               }
             />
-
             <input
-              type="text"
               placeholder="SKU"
               value={v.sku}
               onChange={(e) =>
@@ -326,8 +336,8 @@ const token = localStorage.getItem("adminToken");
             {variants.length > 1 && (
               <button
                 type="button"
-                onClick={() => removeVariant(idx)}
                 className="text-red-500"
+                onClick={() => removeVariant(idx)}
               >
                 Remove Variant
               </button>
@@ -345,7 +355,7 @@ const token = localStorage.getItem("adminToken");
 
         <button
           type="submit"
-          className="w-full bg-black text-white p-3 rounded-lg font-semibold"
+          className="w-full bg-black text-white p-3 rounded-lg"
         >
           Save Product
         </button>

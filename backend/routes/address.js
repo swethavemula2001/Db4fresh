@@ -25,7 +25,7 @@ router.use((req, res, next) => {
 });
 
 router.get("/", getAddresses);
-router.post("/", addAddress);
+router.post("/", requireAuth, addAddress);
 router.put("/:id/default", setDefaultAddress);
 router.delete("/:id", deleteAddress);
 

@@ -12,10 +12,13 @@ export default function ProductList() {
   const [brand, setBrand] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [manufactureDate, setManufactureDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [sortByRating, setSortByRating] = useState("");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; // change to 10 if needed
+  const itemsPerPage = 5;
 
   const token = localStorage.getItem("token");
 
@@ -40,7 +43,7 @@ export default function ProductList() {
   /* ================= BRAND LIST ================= */
   const brands = [...new Set(products.map(p => p.brand).filter(Boolean))];
 
-  /* ================= FILTER LOGIC ================= */
+  /* ================= FILTER + SORT LOGIC ================= */
   useEffect(() => {
     let data = [...products];
 
@@ -62,33 +65,77 @@ export default function ProductList() {
       data = data.filter(p => Number(p.price) <= Number(maxPrice));
     }
 
-    setFiltered(data);
-    setCurrentPage(1); // reset page on filter change
-  }, [search, brand, minPrice, maxPrice, products]);
+    if (manufactureDate) {
+      data = data.filter(
+        p => p.manufacture_date && p.manufacture_date >= manufactureDate
+      );
+    }
 
-  /* ================= PAGINATION LOGIC ================= */
+    if (expiryDate) {
+      data = data.filter(
+        p => p.expiry_date && p.expiry_date <= expiryDate
+      );
+    }
+
+    // ⭐ SORT BY RATING
+    if (sortByRating === "high") {
+      data.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
+    }
+
+    if (sortByRating === "low") {
+      data.sort((a, b) => (a.avgRating || 0) - (b.avgRating || 0));
+    }
+
+    setFiltered(data);
+    setCurrentPage(1);
+  }, [
+    search,
+    brand,
+    minPrice,
+    maxPrice,
+    manufactureDate,
+    expiryDate,
+    sortByRating,
+    products,
+  ]);
+
+  /* ================= PAGINATION ================= */
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedProducts = filtered.slice(startIndex, endIndex);
+
+  /* ================= HELPERS ================= */
+  const today = new Date();
+
+  const isExpired = (date) => {
+    if (!date) return false;
+    return new Date(date) < today;
+  };
+
+  const isExpiringSoon = (date) => {
+    if (!date) return false;
+    const diffDays =
+      (new Date(date) - today) / (1000 * 60 * 60 * 24);
+    return diffDays > 0 && diffDays <= 7;
+  };
 
   /* ================= DELETE PRODUCT ================= */
   const deleteProduct = async (id) => {
     if (!window.confirm("Delete this product?")) return;
 
     try {
-      const res = await fetch(`http://localhost:4000/api/products/${id}`, {
-        method: "DELETE",
-        headers: {
-          authorization: token,
-        },
-      });
+      const res = await fetch(
+        `http://localhost:4000/api/products/${id}`,
+        {
+          method: "DELETE",
+          headers: { authorization: token },
+        }
+      );
 
       if (res.ok) {
         setProducts(prev => prev.filter(p => p.id !== id));
         alert("Product deleted");
-      } else {
-        alert("Delete failed");
       }
     } catch (err) {
       console.error("Error deleting", err);
@@ -112,7 +159,7 @@ export default function ProductList() {
       </div>
 
       {/* ================= FILTER BAR ================= */}
-      <div className="bg-white p-4 rounded shadow mb-4 grid grid-cols-1 md:grid-cols-5 gap-3">
+      <div className="bg-white p-4 rounded shadow mb-4 grid grid-cols-1 md:grid-cols-7 gap-3">
         <input
           type="text"
           placeholder="Search product..."
@@ -132,6 +179,16 @@ export default function ProductList() {
           ))}
         </select>
 
+        <select
+          value={sortByRating}
+          onChange={(e) => setSortByRating(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="">Sort by Rating</option>
+          <option value="high">⭐ High → Low</option>
+          <option value="low">⭐ Low → High</option>
+        </select>
+
         <input
           type="number"
           placeholder="Min Price"
@@ -148,16 +205,33 @@ export default function ProductList() {
           className="border p-2 rounded"
         />
 
+        <input
+          type="date"
+          value={manufactureDate}
+          onChange={(e) => setManufactureDate(e.target.value)}
+          className="border p-2 rounded"
+        />
+
+        <input
+          type="date"
+          value={expiryDate}
+          onChange={(e) => setExpiryDate(e.target.value)}
+          className="border p-2 rounded"
+        />
+
         <button
           onClick={() => {
             setSearch("");
             setBrand("");
             setMinPrice("");
             setMaxPrice("");
+            setManufactureDate("");
+            setExpiryDate("");
+            setSortByRating("");
           }}
-          className="bg-gray-200 rounded px-4"
+          className="bg-gray-200 rounded px-4 col-span-1 md:col-span-7"
         >
-          Clear
+          Clear Filters
         </button>
       </div>
 
@@ -173,13 +247,23 @@ export default function ProductList() {
               <th className="p-3">Category</th>
               <th className="p-3">Price</th>
               <th className="p-3">Stock</th>
+              <th className="p-3">MFG</th>
+              <th className="p-3">EXP</th>
+              <th className="p-3">Rating</th>
               <th className="p-3">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {paginatedProducts.map((product, index) => (
-              <tr key={product.id} className="border-b hover:bg-gray-50">
+              <tr
+                key={product.id}
+                className={`border-b ${
+                  isExpired(product.expiry_date)
+                    ? "bg-red-50 text-red-700"
+                    : "hover:bg-gray-50"
+                }`}
+              >
                 <td className="p-3">{startIndex + index + 1}</td>
 
                 <td className="p-3">
@@ -190,7 +274,7 @@ export default function ProductList() {
                   />
                 </td>
 
-                <td className="p-3 font-medium">{product.brand}</td>
+                <td className="p-3">{product.brand || "—"}</td>
                 <td className="p-3 font-medium">{product.name}</td>
                 <td className="p-3">{product.category}</td>
 
@@ -201,6 +285,34 @@ export default function ProductList() {
                 <td className="p-3">{product.stock}</td>
 
                 <td className="p-3">
+                  {product.manufacture_date
+                    ? new Date(product.manufacture_date).toLocaleDateString("en-IN")
+                    : "—"}
+                </td>
+
+                <td className="p-3">
+                  {product.expiry_date
+                    ? new Date(product.expiry_date).toLocaleDateString("en-IN")
+                    : "—"}
+                </td>
+
+                {/* ⭐ RATINGS COLUMN */}
+                <td className="p-3">
+                  {product.totalReviews > 0 ? (
+                    <div>
+                      <span className="text-yellow-600 font-semibold">
+                        ⭐ {product.avgRating}
+                      </span>
+                      <div className="text-xs text-gray-500">
+                        ({product.totalReviews})
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-sm">No ratings</span>
+                  )}
+                </td>
+
+                <td className="p-3">
                   <div className="flex gap-4">
                     <Link
                       to={`/admin/products/update/${product.id}`}
@@ -208,7 +320,6 @@ export default function ProductList() {
                     >
                       Update
                     </Link>
-
                     <button
                       onClick={() => deleteProduct(product.id)}
                       className="text-red-600 hover:underline"
@@ -222,7 +333,7 @@ export default function ProductList() {
 
             {paginatedProducts.length === 0 && (
               <tr>
-                <td colSpan="8" className="p-6 text-center text-gray-500">
+                <td colSpan="11" className="p-6 text-center text-gray-500">
                   No products found.
                 </td>
               </tr>
@@ -230,43 +341,6 @@ export default function ProductList() {
           </tbody>
         </table>
       </div>
-
-      {/* ================= PAGINATION ================= */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-4">
-          <button
-            onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Prev
-          </button>
-
-          {[...Array(totalPages)].map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 border rounded ${
-                currentPage === i + 1
-                  ? "bg-red-600 text-white"
-                  : "bg-white"
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-
-          <button
-            onClick={() =>
-              setCurrentPage(p => Math.min(p + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
     </div>
   );
 }
