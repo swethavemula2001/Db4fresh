@@ -284,24 +284,17 @@ export default function ProductDetails() {
           </p>
 
           {/* ADD TO CART */}
-          <button
-            onClick={() =>
-              dispatch(
-                addToCart({
-                  productId: product.id,
-                  qty,
-                  price:
-                    selectedVariant?.price ??
-                    product.price,
-                  image: mainImage,
-                  name: product.name,
-                })
-              )
-            }
-            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-semibold"
-          >
-            Add to Cart
-          </button>
+        
+           <AddToCartButton
+  productId={product.id}
+  variantId={selectedVariant?.id ?? "default"}
+  name={product.name}
+  price={selectedVariant?.price ?? product.price}
+  image={mainImage}
+  variantLabel={selectedVariant?.variant_label}
+  stock={selectedVariant?.stock ?? product.stock}
+/> 
+
         </div>
       </div>
 

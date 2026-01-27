@@ -95,6 +95,29 @@ export default function AddToCartButton({
       className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded-lg"
     >
       ADD
-    </button>
-  );
+     </button>
+    /* 🟢 ADD BUTTON (NOT IN CART) */
+
+  // <button
+  //   onClick={() =>
+  //     dispatch(
+  //       addToCart({
+  //         productId,
+  //         variantId,
+  //         name,
+  //         price,
+  //         image,
+  //         variantLabel,
+  //         stock,
+  //         qty: 1,
+  //       })
+  //     )
+  //   }
+  //   className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-semibold"
+  // >
+  //   Add to Cart
+  // </button>
+);
+
+  
 }

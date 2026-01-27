@@ -1,16 +1,19 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+ 
 export default function AddProduct() {
   const navigate = useNavigate();
   const token = localStorage.getItem("adminToken");
+ 
 
   /* =============================
      FORM STATE
   ============================== */
   const [form, setForm] = useState({
     name: "",
-    category: "",
+    category_id: "",
+    subcategory_id: "",
     brand: "",
     description: "",
     unit: "",
@@ -18,6 +21,37 @@ export default function AddProduct() {
     highlights: "",
     return_policy: "",
     seller_id: "",
+    manufactureDate: "",
+    expiryDate: "",
+  });
+ 
+  /* =============================
+     CATEGORY / SUBCATEGORY
+  ============================== */
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+ 
+  useEffect(() => {
+    fetch("http://localhost:4000/api/categories")
+      .then((res) => res.json())
+      .then(setCategories)
+      .catch(console.error);
+  }, []);
+ 
+  useEffect(() => {
+    if (!form.category_id) {
+      setSubCategories([]);
+      return;
+    }
+ 
+    fetch(
+      `http://localhost:4000/api/subcategories/${form.category_id}`
+    )
+      .then((res) => res.json())
+      .then(setSubCategories)
+      .catch(console.error);
+  }, [form.category_id]);
+ 
 
     // ✅ FIXED: Dates added
     manufactureDate: "",
@@ -29,12 +63,33 @@ export default function AddProduct() {
   ============================== */
   const [imageFiles, setImageFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
+ 
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     setImageFiles(files);
-    setPreviews(files.map((file) => URL.createObjectURL(file)));
+    setPreviews(files.map((f) => URL.createObjectURL(f)));
   };
+ 
+  const uploadImages = async () => {
+    if (!imageFiles.length) return [];
+ 
+    const data = new FormData();
+    imageFiles.forEach((img) => data.append("images", img));
+ 
+    const res = await fetch(
+      "http://localhost:4000/api/products/upload",
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: data,
+      }
+    );
+ 
+    const json = await res.json();
+    return json.images || [];
+  };
+ 
 
   const uploadImagesToBackend = async () => {
     try {
@@ -64,30 +119,50 @@ export default function AddProduct() {
   const [variants, setVariants] = useState([
     { variant_label: "", price: "", mrp: "", stock: "", sku: "" },
   ]);
+ 
+  const updateVariant = (i, key, value) => {
+    const copy = [...variants];
+    copy[i][key] = value;
+    setVariants(copy);
 
   const handleVariantChange = (idx, field, value) => {
     const updated = [...variants];
     updated[idx][field] = value;
     setVariants(updated);
   };
-
-  const addVariant = () => {
+ 
+  const addVariant = () =>
     setVariants([
       ...variants,
       { variant_label: "", price: "", mrp: "", stock: "", sku: "" },
     ]);
-  };
-
-  const removeVariant = (idx) => {
+ 
+  const removeVariant = (i) => {
     if (variants.length === 1) return;
-    setVariants(variants.filter((_, i) => i !== idx));
+    setVariants(variants.filter((_, idx) => idx !== i));
   };
-
+ 
   /* =============================
      SUBMIT
   ============================== */
   const handleSubmit = async (e) => {
     e.preventDefault();
+ 
+    if (
+      new Date(form.expiryDate) <=
+      new Date(form.manufactureDate)
+    ) {
+      alert("Expiry date must be after manufacture date");
+      return;
+    }
+ 
+    if (!form.category_id || !form.subcategory_id) {
+      alert("Category and Subcategory are required");
+      return;
+    }
+ 
+    const images = await uploadImages();
+ 
 
     // ✅ Validation
     if (new Date(form.expiryDate) <= new Date(form.manufactureDate)) {
@@ -103,15 +178,18 @@ export default function AddProduct() {
     // ✅ FIXED PAYLOAD
     const payload = {
       name: form.name,
-      category: form.category,
-      brand: form.brand,
-      description: form.description,
-
-      unit: form.unit,
+      category_id: Number(form.category_id),
+      subcategory_id: Number(form.subcategory_id),
+      brand: form.brand || null,
+      description: form.description || null,
+      unit: form.unit || null,
       weight: form.weight || null,
       highlights: form.highlights || null,
       return_policy: form.return_policy || null,
       seller_id: form.seller_id || null,
+      manufacture_date: form.manufactureDate,
+      expiry_date: form.expiryDate,
+      images,
 
       // ✅ IMPORTANT
       manufacture_date: form.manufactureDate,
@@ -119,23 +197,30 @@ export default function AddProduct() {
 
       images: imageUrls,
       active: 1,
-
-      variants: variants.map((v) => ({
-        variant_label: v.variant_label,
-        price: Number(v.price),
-        mrp: v.mrp ? Number(v.mrp) : null,
-        stock: v.stock ? Number(v.stock) : 0,
-        sku: v.sku || null,
-      })),
+      variants: variants
+        .filter((v) => v.variant_label && v.price)
+        .map((v) => ({
+          variant_label: v.variant_label,
+          price: Number(v.price),
+          mrp: v.mrp ? Number(v.mrp) : null,
+          stock: v.stock ? Number(v.stock) : 0,
+          sku: v.sku || null,
+        })),
     };
-
-    console.log("🟢 ADMIN PAYLOAD:", payload);
-
-    try {
-      const res = await fetch("http://localhost:4000/api/products", {
+ 
+    const res = await fetch(
+      "http://localhost:4000/api/products",
+      {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+      }
+    );
+ 
+    const json = await res.json();
+    if (!res.ok) {
+      alert(json.message || "Failed to add product");
+      return;
       });
 
       const json = await res.json();
@@ -150,48 +235,102 @@ export default function AddProduct() {
       console.error(err);
       alert("Network error");
     }
+ 
+    alert("✅ Product added successfully");
+    navigate("/admin/products");
   };
-
+ 
   /* =============================
      UI
   ============================== */
   return (
+    <div className="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
+      <h2 className="text-2xl font-bold mb-4 text-red-600">
+        Add Product
+      </h2>
+ 
+      <form onSubmit={handleSubmit} className="space-y-4">
+ 
     <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-red-600">Add New Product</h2>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <input
-          type="text"
+          className="w-full p-3 border rounded"
           placeholder="Product Name"
-          className="w-full p-3 border rounded-lg"
           value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, name: e.target.value })
+          }
           required
         />
+ 
+        {/* CATEGORY */}
 
         <select
-          className="w-full p-3 border rounded-lg"
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
+          className="w-full p-3 border rounded"
+          value={form.category_id}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              category_id: e.target.value,
+              subcategory_id: "",
+            })
+          }
           required
         >
           <option value="">Select Category</option>
-          <option value="Vegetables">Vegetables</option>
-          <option value="Fruits">Fruits</option>
-          <option value="Dairy">Dairy</option>
-          <option value="Snacks">Snacks</option>
-          <option value="Beverages">Beverages</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </select>
+ 
+        {/* SUBCATEGORY (DEPENDENT DROPDOWN) */}
+        <select
+          className="w-full p-3 border rounded"
+          value={form.subcategory_id}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              subcategory_id: e.target.value,
+            })
+          }
+          disabled={!form.category_id}
+          required
+        >
+          <option value="">
+            {form.category_id
+              ? "Select Subcategory"
+              : "Select Category First"}
+          </option>
+ 
+          {subCategories.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+ 
+        <input
+          className="w-full p-3 border rounded"
+          placeholder="Brand"
 
         <input
           type="text"
           placeholder="Brand"
           className="w-full p-3 border rounded-lg"
           value={form.brand}
-          onChange={(e) => setForm({ ...form, brand: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, brand: e.target.value })
+          }
         />
+ 
 
         <textarea
+          className="w-full p-3 border rounded"
+          placeholder="Description"
           rows="3"
           placeholder="Description"
           className="w-full p-3 border rounded-lg"
@@ -200,11 +339,13 @@ export default function AddProduct() {
             setForm({ ...form, description: e.target.value })
           }
         />
+ 
 
         <div className="flex gap-3">
           <input
             type="number"
             placeholder="Weight"
+            className="w-full p-3 border rounded"
             className="w-full p-3 border rounded-lg"
             value={form.weight}
             onChange={(e) =>
@@ -212,9 +353,11 @@ export default function AddProduct() {
             }
           />
           <select
-            className="w-full p-3 border rounded-lg"
+            className="w-full p-3 border rounded"
             value={form.unit}
-            onChange={(e) => setForm({ ...form, unit: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, unit: e.target.value })
+            }
           >
             <option value="">Unit</option>
             <option value="g">g</option>
@@ -224,6 +367,11 @@ export default function AddProduct() {
             <option value="pcs">pcs</option>
           </select>
         </div>
+ 
+        <input
+          type="date"
+          className="w-full p-3 border rounded"
+          value={form.manufactureDate}
 
         {/* ✅ DATES */}
         <div>
@@ -268,19 +416,44 @@ export default function AddProduct() {
           className="w-full p-3 border rounded-lg"
           value={form.return_policy}
           onChange={(e) =>
-            setForm({ ...form, return_policy: e.target.value })
+            setForm({ ...form, manufactureDate: e.target.value })
           }
+          required
         />
+ 
 
         <input
-          type="text"
-          placeholder="Seller ID"
-          className="w-full p-3 border rounded-lg"
-          value={form.seller_id}
+          type="date"
+          className="w-full p-3 border rounded"
+          value={form.expiryDate}
           onChange={(e) =>
-            setForm({ ...form, seller_id: e.target.value })
+            setForm({ ...form, expiryDate: e.target.value })
           }
+          required
         />
+ 
+        <input type="file" multiple accept="image/*" onChange={handleImageUpload} />
+ 
+        <div className="flex gap-2 flex-wrap">
+          {previews.map((src, i) => (
+            <img
+              key={i}
+              src={src}
+              alt=""
+              className="w-20 h-20 rounded"
+            />
+          ))}
+        </div>
+ 
+        {/* VARIANTS */}
+        <h3 className="font-semibold text-red-600">
+          Variants
+        </h3>
+ 
+        {variants.map((v, i) => (
+          <div key={i} className="border p-3 rounded space-y-2">
+            <input
+              placeholder="Label"
 
         <input type="file" multiple accept="image/*" onChange={handleImageUpload} />
 
@@ -298,7 +471,11 @@ export default function AddProduct() {
               placeholder="Variant Label"
               value={v.variant_label}
               onChange={(e) =>
-                handleVariantChange(idx, "variant_label", e.target.value)
+                updateVariant(
+                  i,
+                  "variant_label",
+                  e.target.value
+                )
               }
             />
             <input
@@ -306,6 +483,7 @@ export default function AddProduct() {
               placeholder="Price"
               value={v.price}
               onChange={(e) =>
+                updateVariant(i, "price", e.target.value)
                 handleVariantChange(idx, "price", e.target.value)
               }
             />
@@ -322,7 +500,7 @@ export default function AddProduct() {
               placeholder="Stock"
               value={v.stock}
               onChange={(e) =>
-                handleVariantChange(idx, "stock", e.target.value)
+                updateVariant(i, "stock", e.target.value)
               }
             />
             <input
@@ -337,14 +515,15 @@ export default function AddProduct() {
               <button
                 type="button"
                 className="text-red-500"
+                onClick={() => removeVariant(i)}
                 onClick={() => removeVariant(idx)}
               >
-                Remove Variant
+                Remove
               </button>
             )}
           </div>
         ))}
-
+ 
         <button
           type="button"
           onClick={addVariant}
@@ -352,6 +531,8 @@ export default function AddProduct() {
         >
           + Add Variant
         </button>
+ 
+        <button className="w-full bg-black text-white p-3 rounded">
 
         <button
           type="submit"
@@ -363,3 +544,5 @@ export default function AddProduct() {
     </div>
   );
 }
+ 
+ 

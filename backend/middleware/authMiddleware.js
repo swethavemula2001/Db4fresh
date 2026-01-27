@@ -18,6 +18,11 @@ export const requireAuth = (req, res, next) => {
       process.env.ADMIN_SECRET || "ADMIN_SECRET"
     );
 
+    // req.user = decoded; // ✅ attach user info
+    req.user = {
+  id: decoded.id || decoded.user_id,
+  email: decoded.email,
+};
     /* =========================
        Attach user info
        decoded contains:

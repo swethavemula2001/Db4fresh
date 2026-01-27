@@ -32,6 +32,8 @@ export default function Auth() {
       } else {
         // 📝 SIGNUP
         await axios.post(`${API}/signup`, {
+        // await axios.post(`${API}/register`, {
+
           name: form.name,
           email: form.email,
           password: form.password,
