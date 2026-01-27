@@ -1,10 +1,18 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+ 
 export default function AddProduct() {
+  const navigate = useNavigate();
+  const token = localStorage.getItem("adminToken");
+ 
+  /* =============================
+     FORM STATE
+  ============================== */
   const [form, setForm] = useState({
     name: "",
-    category: "",
+    category_id: "",
+    subcategory_id: "",
     brand: "",
     description: "",
     unit: "",
@@ -12,202 +20,261 @@ export default function AddProduct() {
     highlights: "",
     return_policy: "",
     seller_id: "",
+    manufactureDate: "",
+    expiryDate: "",
   });
-
-  // ⭐ Multiple images
+ 
+  /* =============================
+     CATEGORY / SUBCATEGORY
+  ============================== */
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+ 
+  useEffect(() => {
+    fetch("http://localhost:4000/api/categories")
+      .then((res) => res.json())
+      .then(setCategories)
+      .catch(console.error);
+  }, []);
+ 
+  useEffect(() => {
+    if (!form.category_id) {
+      setSubCategories([]);
+      return;
+    }
+ 
+    fetch(
+      `http://localhost:4000/api/subcategories/${form.category_id}`
+    )
+      .then((res) => res.json())
+      .then(setSubCategories)
+      .catch(console.error);
+  }, [form.category_id]);
+ 
+  /* =============================
+     IMAGES
+  ============================== */
   const [imageFiles, setImageFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
-
-  // ⭐ Product variants
-  const [variants, setVariants] = useState([
-    { variant_label: "", price: "", mrp: "", stock: "", sku: "" },
-  ]);
-  const navigate = useNavigate();
-const token = localStorage.getItem("adminToken");
-
-  /* =============================
-     IMAGE UPLOAD
-  ============================== */
+ 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     setImageFiles(files);
-    setPreviews(files.map((file) => URL.createObjectURL(file)));
+    setPreviews(files.map((f) => URL.createObjectURL(f)));
   };
-
-  const uploadImagesToBackend = async () => {
-  try {
+ 
+  const uploadImages = async () => {
+    if (!imageFiles.length) return [];
+ 
     const data = new FormData();
     imageFiles.forEach((img) => data.append("images", img));
-
-    const res = await fetch("http://localhost:4000/api/products/upload", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: data,
-    });
-
-    if (!res.ok) return [];
+ 
+    const res = await fetch(
+      "http://localhost:4000/api/products/upload",
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: data,
+      }
+    );
+ 
     const json = await res.json();
     return json.images || [];
-  } catch (err) {
-    console.error("Upload error:", err);
-    return [];
-  }
-};
-
-  /* =============================
-     VARIANT HANDLERS
-  ============================== */
-  const handleVariantChange = (idx, field, value) => {
-    const updated = [...variants];
-    updated[idx][field] = value;
-    setVariants(updated);
   };
-
-  const addVariant = () => {
+ 
+  /* =============================
+     VARIANTS
+  ============================== */
+  const [variants, setVariants] = useState([
+    { variant_label: "", price: "", mrp: "", stock: "", sku: "" },
+  ]);
+ 
+  const updateVariant = (i, key, value) => {
+    const copy = [...variants];
+    copy[i][key] = value;
+    setVariants(copy);
+  };
+ 
+  const addVariant = () =>
     setVariants([
       ...variants,
       { variant_label: "", price: "", mrp: "", stock: "", sku: "" },
     ]);
-  };
-
-  const removeVariant = (idx) => {
+ 
+  const removeVariant = (i) => {
     if (variants.length === 1) return;
-    setVariants(variants.filter((_, i) => i !== idx));
+    setVariants(variants.filter((_, idx) => idx !== i));
   };
-
+ 
   /* =============================
      SUBMIT
   ============================== */
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    let imageUrls = [];
-    if (imageFiles.length > 0) {
-      imageUrls = await uploadImagesToBackend();
+ 
+    if (
+      new Date(form.expiryDate) <=
+      new Date(form.manufactureDate)
+    ) {
+      alert("Expiry date must be after manufacture date");
+      return;
     }
-
+ 
+    if (!form.category_id || !form.subcategory_id) {
+      alert("Category and Subcategory are required");
+      return;
+    }
+ 
+    const images = await uploadImages();
+ 
     const payload = {
       name: form.name,
-      category: form.category,
-      brand: form.brand,
-      description: form.description,
-
-      unit: form.unit,
+      category_id: Number(form.category_id),
+      subcategory_id: Number(form.subcategory_id),
+      brand: form.brand || null,
+      description: form.description || null,
+      unit: form.unit || null,
       weight: form.weight || null,
       highlights: form.highlights || null,
       return_policy: form.return_policy || null,
       seller_id: form.seller_id || null,
-
-      images: imageUrls,
+      manufacture_date: form.manufactureDate,
+      expiry_date: form.expiryDate,
+      images,
       active: 1,
-
-      variants: variants.map((v) => ({
-        variant_label: v.variant_label,
-        price: Number(v.price),
-        mrp: v.mrp ? Number(v.mrp) : null,
-        stock: v.stock ? Number(v.stock) : 0,
-        sku: v.sku || null,
-      })),
+      variants: variants
+        .filter((v) => v.variant_label && v.price)
+        .map((v) => ({
+          variant_label: v.variant_label,
+          price: Number(v.price),
+          mrp: v.mrp ? Number(v.mrp) : null,
+          stock: v.stock ? Number(v.stock) : 0,
+          sku: v.sku || null,
+        })),
     };
-
-    console.log("🟢 ADMIN PAYLOAD:", payload);
-
-    try {
-      const res = await fetch("http://localhost:4000/api/products", {
+ 
+    const res = await fetch(
+      "http://localhost:4000/api/products",
+      {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-      });
-
-      const json = await res.json();
-      if (!res.ok) {
-         alert(json.message || "Failed to add product");
-         return;
       }
-
-        alert("✅ Product added successfully!");
-        navigate("/admin/products"); 
-
-    } catch (err) {
-      console.error(err);
-      alert("Network error");
+    );
+ 
+    const json = await res.json();
+    if (!res.ok) {
+      alert(json.message || "Failed to add product");
+      return;
     }
+ 
+    alert("✅ Product added successfully");
+    navigate("/admin/products");
   };
-
+ 
   /* =============================
      UI
   ============================== */
   return (
-    <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-red-600">
-        Add New Product
+    <div className="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
+      <h2 className="text-2xl font-bold mb-4 text-red-600">
+        Add Product
       </h2>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-
-        {/* PRODUCT NAME */}
+ 
+      <form onSubmit={handleSubmit} className="space-y-4">
+ 
         <input
-          type="text"
+          className="w-full p-3 border rounded"
           placeholder="Product Name"
-          className="w-full p-3 border rounded-lg"
           value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, name: e.target.value })
+          }
           required
         />
-
+ 
         {/* CATEGORY */}
         <select
-          className="w-full p-3 border rounded-lg"
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
+          className="w-full p-3 border rounded"
+          value={form.category_id}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              category_id: e.target.value,
+              subcategory_id: "",
+            })
+          }
           required
         >
           <option value="">Select Category</option>
-          <option value="Vegetables">Vegetables</option>
-          <option value="Fruits">Fruits</option>
-          <option value="Dairy">Dairy</option>
-          <option value="Snacks">Snacks</option>
-          <option value="Beverages">Beverages</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </select>
-
-        {/* BRAND */}
+ 
+        {/* SUBCATEGORY (DEPENDENT DROPDOWN) */}
+        <select
+          className="w-full p-3 border rounded"
+          value={form.subcategory_id}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              subcategory_id: e.target.value,
+            })
+          }
+          disabled={!form.category_id}
+          required
+        >
+          <option value="">
+            {form.category_id
+              ? "Select Subcategory"
+              : "Select Category First"}
+          </option>
+ 
+          {subCategories.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+ 
         <input
-          type="text"
-          placeholder="Brand (e.g. Amul)"
-          className="w-full p-3 border rounded-lg"
+          className="w-full p-3 border rounded"
+          placeholder="Brand"
           value={form.brand}
-          onChange={(e) => setForm({ ...form, brand: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, brand: e.target.value })
+          }
         />
-
-        {/* DESCRIPTION */}
+ 
         <textarea
+          className="w-full p-3 border rounded"
+          placeholder="Description"
           rows="3"
-          placeholder="Product Description"
-          className="w-full p-3 border rounded-lg"
           value={form.description}
           onChange={(e) =>
             setForm({ ...form, description: e.target.value })
           }
         />
-
-        {/* WEIGHT + UNIT */}
+ 
         <div className="flex gap-3">
           <input
             type="number"
-            placeholder="Weight / Quantity"
-            className="w-full p-3 border rounded-lg"
+            placeholder="Weight"
+            className="w-full p-3 border rounded"
             value={form.weight}
             onChange={(e) =>
               setForm({ ...form, weight: e.target.value })
             }
           />
-
           <select
-            className="w-full p-3 border rounded-lg"
+            className="w-full p-3 border rounded"
             value={form.unit}
-            onChange={(e) => setForm({ ...form, unit: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, unit: e.target.value })
+            }
           >
             <option value="">Unit</option>
             <option value="g">g</option>
@@ -217,124 +284,86 @@ const token = localStorage.getItem("adminToken");
             <option value="pcs">pcs</option>
           </select>
         </div>
-
-        {/* HIGHLIGHTS */}
-        <textarea
-          rows="3"
-          placeholder="Key Highlights (use | to separate)"
-          className="w-full p-3 border rounded-lg"
-          value={form.highlights}
-          onChange={(e) =>
-            setForm({ ...form, highlights: e.target.value })
-          }
-        />
-
-        {/* RETURN POLICY */}
-        <textarea
-          rows="2"
-          placeholder="Return Policy"
-          className="w-full p-3 border rounded-lg"
-          value={form.return_policy}
-          onChange={(e) =>
-            setForm({ ...form, return_policy: e.target.value })
-          }
-        />
-
-        {/* SELLER */}
+ 
         <input
-          type="text"
-          placeholder="Seller ID"
-          className="w-full p-3 border rounded-lg"
-          value={form.seller_id}
+          type="date"
+          className="w-full p-3 border rounded"
+          value={form.manufactureDate}
           onChange={(e) =>
-            setForm({ ...form, seller_id: e.target.value })
+            setForm({ ...form, manufactureDate: e.target.value })
           }
+          required
         />
-
-        {/* IMAGES */}
+ 
         <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleImageUpload}
+          type="date"
+          className="w-full p-3 border rounded"
+          value={form.expiryDate}
+          onChange={(e) =>
+            setForm({ ...form, expiryDate: e.target.value })
+          }
+          required
         />
-
-        {/* IMAGE PREVIEWS */}
+ 
+        <input type="file" multiple accept="image/*" onChange={handleImageUpload} />
+ 
         <div className="flex gap-2 flex-wrap">
           {previews.map((src, i) => (
             <img
               key={i}
               src={src}
-              alt="preview"
-              className="w-20 h-20 object-cover rounded"
+              alt=""
+              className="w-20 h-20 rounded"
             />
           ))}
         </div>
-
+ 
         {/* VARIANTS */}
-        <h3 className="font-semibold text-red-600">Variants</h3>
-
-        {variants.map((v, idx) => (
-          <div key={idx} className="border p-3 rounded space-y-2">
+        <h3 className="font-semibold text-red-600">
+          Variants
+        </h3>
+ 
+        {variants.map((v, i) => (
+          <div key={i} className="border p-3 rounded space-y-2">
             <input
-              type="text"
-              placeholder="Variant Label (500 g, 1 kg)"
+              placeholder="Label"
               value={v.variant_label}
               onChange={(e) =>
-                handleVariantChange(idx, "variant_label", e.target.value)
+                updateVariant(
+                  i,
+                  "variant_label",
+                  e.target.value
+                )
               }
-              required
             />
-
             <input
               type="number"
               placeholder="Price"
               value={v.price}
               onChange={(e) =>
-                handleVariantChange(idx, "price", e.target.value)
-              }
-              required
-            />
-
-            <input
-              type="number"
-              placeholder="MRP"
-              value={v.mrp}
-              onChange={(e) =>
-                handleVariantChange(idx, "mrp", e.target.value)
+                updateVariant(i, "price", e.target.value)
               }
             />
-
             <input
               type="number"
               placeholder="Stock"
               value={v.stock}
               onChange={(e) =>
-                handleVariantChange(idx, "stock", e.target.value)
+                updateVariant(i, "stock", e.target.value)
               }
             />
-
-            <input
-              type="text"
-              placeholder="SKU"
-              value={v.sku}
-              onChange={(e) =>
-                handleVariantChange(idx, "sku", e.target.value)
-              }
-            />
-
             {variants.length > 1 && (
               <button
                 type="button"
-                onClick={() => removeVariant(idx)}
                 className="text-red-500"
+                onClick={() => removeVariant(i)}
               >
-                Remove Variant
+                Remove
               </button>
             )}
           </div>
         ))}
-
+ 
         <button
           type="button"
           onClick={addVariant}
@@ -342,14 +371,13 @@ const token = localStorage.getItem("adminToken");
         >
           + Add Variant
         </button>
-
-        <button
-          type="submit"
-          className="w-full bg-black text-white p-3 rounded-lg font-semibold"
-        >
+ 
+        <button className="w-full bg-black text-white p-3 rounded">
           Save Product
         </button>
       </form>
     </div>
   );
 }
+ 
+ 

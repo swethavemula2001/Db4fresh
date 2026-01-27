@@ -1,8 +1,9 @@
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
-
+ 
 // ROUTES
 import productRoutes from "./routes/products.js";
 import cartRoutes from "./routes/cart.js";
@@ -17,14 +18,17 @@ import userRoutes from "./routes/userRoutes.js"; // ✅ ONLY THIS
 import walletRoutes from "./routes/walletRoutes.js";
 import supportRoutes from "./routes/supportRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
-
+import categoryRoutes from "./routes/categoryRoutes.js";
+import subCategoryRoutes from "./routes/subCategoryRoutes.js";
+ 
+ 
 // MIDDLEWARE
 import { errorHandler } from "./middleware/errorHandler.js";
-
+ 
 dotenv.config();
-
+ 
 const app = express();
-
+ 
 /* ================= MIDDLEWARE ================= */
 app.use(
   cors({
@@ -32,13 +36,13 @@ app.use(
     allowedHeaders: "*",
   })
 );
-
+ 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+ 
 /* ================= STATIC FILES ================= */
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
+ 
 /* ================= ROUTES ================= */
 app.use("/api/products", productRoutes);
 app.use("/api/addresses", addressRoutes);
@@ -53,18 +57,22 @@ app.use("/api/users", userRoutes); // ✅ PROFILE ROUTES FIXED
 app.use("/api/wallet", walletRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/notifications", notificationRoutes);
-
+app.use("/api/categories", categoryRoutes);
+app.use("/api/subcategories", subCategoryRoutes);
+ 
 /* ================= HEALTH CHECK ================= */
 app.get("/", (req, res) => {
   res.send("✅ Backend running...");
 });
-
+ 
 /* ================= ERROR HANDLER ================= */
 app.use(errorHandler);
-
+ 
 /* ================= START SERVER ================= */
 const PORT = process.env.PORT || 4000;
-
+ 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+ 
+ 

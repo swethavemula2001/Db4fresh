@@ -15,7 +15,12 @@ export const requireAuth = (req, res, next) => {
       process.env.JWT_SECRET || "SECRET_KEY"
     );
 
-    req.user = decoded; // ✅ attach user info
+    // req.user = decoded; // ✅ attach user info
+    req.user = {
+  id: decoded.id || decoded.user_id,
+  email: decoded.email,
+};
+
     next();
   } catch (err) {
     console.error("JWT error:", err.message);
