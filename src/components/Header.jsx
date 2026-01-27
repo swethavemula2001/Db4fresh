@@ -218,6 +218,7 @@ import OfferStrip from "./OfferStrip";
 import db4freshlogo from "../Assets/Db4freshlogo.png";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaHeart } from "react-icons/fa";
+import { FiHome } from "react-icons/fi";
 
 export default function Header() {
   const [locOpen, setLocOpen] = useState(false);
@@ -241,6 +242,7 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () =>
       document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   /* ================= LOAD DEFAULT ADDRESS ================= */
@@ -349,6 +351,13 @@ export default function Header() {
 
           {/* RIGHT ACTIONS */}
           <div className="flex items-center gap-4 text-white ml-auto">
+            {/* HOME */}
+<Link
+  to="/"
+  className="flex items-center gap-1 text-sm ">
+  <FiHome size={16} />
+  Home
+</Link>
 
             <Link to="/wishlist" className="flex items-center gap-1 text-sm">
               <FaHeart />
@@ -358,6 +367,7 @@ export default function Header() {
             <Link to="/account" className="text-sm">
               My Account
             </Link>
+            <Link to="/account" className="text-sm">My Account</Link>
 
             <Link to="/cart" className="text-sm">
               Cart ({cartCount})
