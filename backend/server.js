@@ -22,6 +22,8 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import subCategoryRoutes from "./routes/subCategoryRoutes.js";
  
  
+
+
 // MIDDLEWARE
 import { errorHandler } from "./middleware/errorHandler.js";
  

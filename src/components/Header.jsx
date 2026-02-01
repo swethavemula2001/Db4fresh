@@ -246,6 +246,7 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaHeart } from "react-icons/fa";
 import { FiHome } from "react-icons/fi";
  
+
 export default function Header() {
   const [locOpen, setLocOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -385,6 +386,7 @@ export default function Header() {
   Home
 </Link>
  
+
             <Link to="/wishlist" className="flex items-center gap-1 text-sm">
               <FaHeart />
               <span>{wishlistCount}</span>
@@ -392,6 +394,12 @@ export default function Header() {
            
             <Link to="/account" className="text-sm">My Account</Link>
  
+
+            <Link to="/account" className="text-sm">
+              My Account
+            </Link>
+            <Link to="/account" className="text-sm">My Account</Link>
+
             <Link to="/cart" className="text-sm">
               Cart ({cartCount})
             </Link>
