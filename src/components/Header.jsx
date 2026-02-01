@@ -9,18 +9,19 @@
 // import db4freshlogo from "../Assets/Db4freshlogo.png";
 // import { BsThreeDotsVertical } from "react-icons/bs";
 // import { FaHeart } from "react-icons/fa";
- 
+
 // export default function Header() {
 //   const [locOpen, setLocOpen] = useState(false);
 //   const [query, setQuery] = useState("");
+//   const [results, setResults] = useState([]);
 //   const [menuOpen, setMenuOpen] = useState(false);
 //   const [location, setLocation] = useState("Select Location");
- 
+
 //   const menuRef = useRef(null);
- 
+
 //   /* ================= USER FROM LOCAL STORAGE ================= */
 //   const user = JSON.parse(localStorage.getItem("user"));
- 
+
 //   /* ================= CLOSE MENU ON OUTSIDE CLICK ================= */
 //   useEffect(() => {
 //     const handleClickOutside = (e) => {
@@ -29,9 +30,10 @@
 //       }
 //     };
 //     document.addEventListener("mousedown", handleClickOutside);
-//     return () => document.removeEventListener("mousedown", handleClickOutside);
+//     return () =>
+//       document.removeEventListener("mousedown", handleClickOutside);
 //   }, []);
- 
+
 //   /* ================= LOAD DEFAULT ADDRESS ================= */
 //   useEffect(() => {
 //     const loadDefault = async () => {
@@ -41,49 +43,67 @@
 //           setLocation("Select Location");
 //           return;
 //         }
- 
+
 //         const res = await axios.get(
 //           "http://localhost:4000/api/addresses",
 //           { headers: { Authorization: `Bearer ${token}` } }
 //         );
- 
+
 //         const list = Array.isArray(res.data)
 //           ? res.data
 //           : res.data.addresses || [];
- 
+
 //         const def = list.find(
 //           (a) => a.is_default === 1 || a.is_default === true
 //         );
- 
+
 //         if (def?.address) setLocation(def.address);
 //       } catch (err) {
 //         console.error("Header address error:", err.message);
 //       }
 //     };
- 
+
 //     loadDefault();
 //   }, [user]);
- 
+
+//   /* ================= SEARCH (BACKEND BASED) ================= */
+//   useEffect(() => {
+//     if (!query) {
+//       setResults([]);
+//       return;
+//     }
+
+//     const timeout = setTimeout(async () => {
+//       try {
+//         const res = await axios.get(
+//           `http://localhost:4000/api/products/search?q=${query}`
+//         );
+//         setResults(res.data || []);
+//       } catch (err) {
+//         console.error("Search error:", err);
+//         setResults([]);
+//       }
+//     }, 300); // debounce
+
+//     return () => clearTimeout(timeout);
+//   }, [query]);
+
 //   /* ================= REDUX DATA ================= */
 //   const cartCount = useSelector((s) =>
 //     s.cart.items.reduce((a, b) => a + b.qty, 0)
 //   );
- 
+
 //   const wishlistCount = useSelector(
 //     (s) => s.wishlist?.items?.length || 0
 //   );
- 
-//   // const products = useSelector((s) => s.products.items);
-//   const products = useSelector((s) => s.products.items || []);
 
- 
 //   return (
 //     <>
 //       <OfferStrip />
- 
+
 //       <header className="bg-red-600 sticky top-0 z-50">
 //         <div className="max-w-7xl mx-auto flex items-center gap-4 px-4 py-2">
- 
+
 //           {/* LOGO */}
 //           <Link to="/" className="flex-shrink-0">
 //             <img
@@ -92,7 +112,7 @@
 //               className="w-10 h-10 rounded-full"
 //             />
 //           </Link>
- 
+
 //           {/* LOCATION */}
 //           <button
 //             onClick={() => setLocOpen(true)}
@@ -100,42 +120,46 @@
 //           >
 //             {location}
 //           </button>
- 
-//          {/* SEARCH */}
-// <div className="relative flex-1 hidden sm:block">
-//   <input
-//     value={query}
-//     onChange={(e) => setQuery(e.target.value)}
-//     placeholder="Search for milk, fruits, snacks..."
-//     className="w-full px-4 py-2 rounded-xl text-sm outline-none"
-//   />
 
-//   {query && (
-//     <SearchSuggestions
-//       results={products.filter(
-//         (p) =>
-//           p.name &&
-//           p.name.toLowerCase().includes(query.toLowerCase())
-//       )}
-//       onSelect={(value) => setQuery(value)}
-//     />
-//   )}
-// </div>
- 
+//           {/* SEARCH */}
+//           <div className="relative flex-1 hidden sm:block">
+//             <input
+//               value={query}
+//               onChange={(e) => setQuery(e.target.value)}
+//               placeholder="Search for milk, fruits, snacks..."
+//               className="w-full px-4 py-2 rounded-xl text-sm outline-none"
+//             />
+
+//             {query && (
+//               <SearchSuggestions
+//                 results={results}
+//                 onSelect={(value) => setQuery(value)}
+//               />
+//             )}
+//           </div>
+
 //           {/* RIGHT ACTIONS */}
 //           <div className="flex items-center gap-4 text-white ml-auto">
- 
+//             <Link
+//   to="/"
+//   className="flex items-center gap-1 text-sm ">
+//   <FiHome size={16} />
+//   Home
+// </Link>
+
 //             <Link to="/wishlist" className="flex items-center gap-1 text-sm">
 //               <FaHeart />
 //               <span>{wishlistCount}</span>
 //             </Link>
- 
-//             <Link to="/account" className="text-sm">My Account</Link>
- 
+
+//             <Link to="/account" className="text-sm">
+//               My Account
+//             </Link>
+
 //             <Link to="/cart" className="text-sm">
 //               Cart ({cartCount})
 //             </Link>
- 
+
 //             {/* USER MENU */}
 //             <div className="relative" ref={menuRef}>
 //               <button
@@ -144,7 +168,7 @@
 //               >
 //                 <BsThreeDotsVertical />
 //               </button>
- 
+
 //               {menuOpen && (
 //                 <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg z-50">
 //                   {user ? (
@@ -152,7 +176,7 @@
 //                       <p className="px-4 py-2 text-xs text-gray-500">
 //                         Hi, {user.name}
 //                       </p>
- 
+
 //                       <Link
 //                         to="/orders"
 //                         className="block px-4 py-2 hover:bg-gray-100"
@@ -160,7 +184,7 @@
 //                       >
 //                         My Orders
 //                       </Link>
- 
+
 //                       <Link
 //                         to="/profile"
 //                         className="block px-4 py-2 hover:bg-gray-100"
@@ -168,7 +192,7 @@
 //                       >
 //                         My Profile
 //                       </Link>
- 
+
 //                       <button
 //                         onClick={() => {
 //                           localStorage.clear();
@@ -193,7 +217,7 @@
 //           </div>
 //         </div>
 //       </header>
- 
+
 //       {/* LOCATION MODAL */}
 //       {locOpen && (
 //         <LocationModal
@@ -208,6 +232,8 @@
 //     </>
 //   );
 // }
+
+ 
 import axios from "axios";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
@@ -219,6 +245,7 @@ import db4freshlogo from "../Assets/Db4freshlogo.png";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaHeart } from "react-icons/fa";
 import { FiHome } from "react-icons/fi";
+ 
 
 export default function Header() {
   const [locOpen, setLocOpen] = useState(false);
@@ -226,12 +253,12 @@ export default function Header() {
   const [results, setResults] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [location, setLocation] = useState("Select Location");
-
+ 
   const menuRef = useRef(null);
-
+ 
   /* ================= USER FROM LOCAL STORAGE ================= */
   const user = JSON.parse(localStorage.getItem("user"));
-
+ 
   /* ================= CLOSE MENU ON OUTSIDE CLICK ================= */
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -244,7 +271,7 @@ export default function Header() {
       document.removeEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
+ 
   /* ================= LOAD DEFAULT ADDRESS ================= */
   useEffect(() => {
     const loadDefault = async () => {
@@ -254,36 +281,36 @@ export default function Header() {
           setLocation("Select Location");
           return;
         }
-
+ 
         const res = await axios.get(
           "http://localhost:4000/api/addresses",
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
+ 
         const list = Array.isArray(res.data)
           ? res.data
           : res.data.addresses || [];
-
+ 
         const def = list.find(
           (a) => a.is_default === 1 || a.is_default === true
         );
-
+ 
         if (def?.address) setLocation(def.address);
       } catch (err) {
         console.error("Header address error:", err.message);
       }
     };
-
+ 
     loadDefault();
   }, [user]);
-
+ 
   /* ================= SEARCH (BACKEND BASED) ================= */
   useEffect(() => {
     if (!query) {
       setResults([]);
       return;
     }
-
+ 
     const timeout = setTimeout(async () => {
       try {
         const res = await axios.get(
@@ -295,26 +322,26 @@ export default function Header() {
         setResults([]);
       }
     }, 300); // debounce
-
+ 
     return () => clearTimeout(timeout);
   }, [query]);
-
+ 
   /* ================= REDUX DATA ================= */
   const cartCount = useSelector((s) =>
     s.cart.items.reduce((a, b) => a + b.qty, 0)
   );
-
+ 
   const wishlistCount = useSelector(
     (s) => s.wishlist?.items?.length || 0
   );
-
+ 
   return (
     <>
       <OfferStrip />
-
+ 
       <header className="bg-red-600 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center gap-4 px-4 py-2">
-
+ 
           {/* LOGO */}
           <Link to="/" className="flex-shrink-0">
             <img
@@ -323,7 +350,7 @@ export default function Header() {
               className="w-10 h-10 rounded-full"
             />
           </Link>
-
+ 
           {/* LOCATION */}
           <button
             onClick={() => setLocOpen(true)}
@@ -331,7 +358,7 @@ export default function Header() {
           >
             {location}
           </button>
-
+ 
           {/* SEARCH */}
           <div className="relative flex-1 hidden sm:block">
             <input
@@ -340,7 +367,7 @@ export default function Header() {
               placeholder="Search for milk, fruits, snacks..."
               className="w-full px-4 py-2 rounded-xl text-sm outline-none"
             />
-
+ 
             {query && (
               <SearchSuggestions
                 results={results}
@@ -348,7 +375,7 @@ export default function Header() {
               />
             )}
           </div>
-
+ 
           {/* RIGHT ACTIONS */}
           <div className="flex items-center gap-4 text-white ml-auto">
             {/* HOME */}
@@ -358,11 +385,15 @@ export default function Header() {
   <FiHome size={16} />
   Home
 </Link>
+ 
 
             <Link to="/wishlist" className="flex items-center gap-1 text-sm">
               <FaHeart />
               <span>{wishlistCount}</span>
             </Link>
+           
+            <Link to="/account" className="text-sm">My Account</Link>
+ 
 
             <Link to="/account" className="text-sm">
               My Account
@@ -372,7 +403,7 @@ export default function Header() {
             <Link to="/cart" className="text-sm">
               Cart ({cartCount})
             </Link>
-
+ 
             {/* USER MENU */}
             <div className="relative" ref={menuRef}>
               <button
@@ -381,7 +412,7 @@ export default function Header() {
               >
                 <BsThreeDotsVertical />
               </button>
-
+ 
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg z-50">
                   {user ? (
@@ -389,7 +420,7 @@ export default function Header() {
                       <p className="px-4 py-2 text-xs text-gray-500">
                         Hi, {user.name}
                       </p>
-
+ 
                       <Link
                         to="/orders"
                         className="block px-4 py-2 hover:bg-gray-100"
@@ -397,7 +428,7 @@ export default function Header() {
                       >
                         My Orders
                       </Link>
-
+ 
                       <Link
                         to="/profile"
                         className="block px-4 py-2 hover:bg-gray-100"
@@ -405,7 +436,7 @@ export default function Header() {
                       >
                         My Profile
                       </Link>
-
+ 
                       <button
                         onClick={() => {
                           localStorage.clear();
@@ -430,7 +461,7 @@ export default function Header() {
           </div>
         </div>
       </header>
-
+ 
       {/* LOCATION MODAL */}
       {locOpen && (
         <LocationModal
@@ -445,3 +476,5 @@ export default function Header() {
     </>
   );
 }
+ 
+ 
