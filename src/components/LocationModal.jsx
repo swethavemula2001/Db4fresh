@@ -1,229 +1,301 @@
-import React, { useState, useEffect } from "react";
+
+// import { useEffect, useState } from "react";
+// import axios from "axios";
+// import AddressModal from "./AddressModal";
+
+// export default function LocationModal({ isOpen, onClose, onSelect }) {
+//   const [addresses, setAddresses] = useState([]);
+//   const [showAdd, setShowAdd] = useState(false);
+
+//   const token = localStorage.getItem("token");
+
+//   /* ================= LOAD ADDRESSES ================= */
+//   const loadAddresses = async () => {
+//     if (!token) {
+//       setAddresses([]);
+//       return;
+//     }
+
+//     try {
+//       const res = await axios.get(
+//         "http://localhost:4000/api/addresses",
+//         {
+//           headers: { Authorization: `Bearer ${token}` },
+//         }
+//       );
+
+//       setAddresses(Array.isArray(res.data) ? res.data : []);
+//     } catch (err) {
+//       console.error("LOAD ADDRESS ERROR:", err);
+//       setAddresses([]);
+//     }
+//   };
+
+//   /* ================= OPEN MODAL EFFECT ================= */
+//   useEffect(() => {
+//     if (isOpen) {
+//       loadAddresses();
+//       document.body.style.overflow = "hidden";
+//     } else {
+//       document.body.style.overflow = "auto";
+//     }
+
+//     return () => {
+//       document.body.style.overflow = "auto";
+//     };
+//   }, [isOpen, token]);
+
+//   if (!isOpen) return null;
+
+//   return (
+//     <>
+//       <div className="fixed inset-0 bg-black bg-opacity-40 z-40 flex items-center justify-center">
+//         <div className="bg-white w-full max-w-md rounded-xl p-6 max-h-[80vh] overflow-y-auto">
+
+//           <h2 className="text-xl font-bold mb-4">
+//             Select Delivery Address
+//           </h2>
+
+//           {/* ================= ADDRESS LIST ================= */}
+//           {addresses.length === 0 ? (
+//             <p className="text-sm text-gray-500 mb-4">
+//               No saved addresses
+//             </p>
+//           ) : (
+//             addresses.map((a) => (
+//               <div
+//                 key={a.id}
+//                 className="border rounded-lg p-3 mb-3"
+//               >
+//                 <p className="font-semibold">{a.name}</p>
+//                 <p className="text-sm">
+//                   {a.address_line1}
+//                   {a.city ? `, ${a.city}` : ""}
+//                 </p>
+//                 <p className="text-xs text-gray-600">
+//                   Pincode: {a.pincode}
+//                 </p>
+
+//                 <button
+//                   onClick={() => {
+//                     onSelect(a);
+//                     localStorage.setItem(
+//                       "selected_address",
+//                       JSON.stringify(a)
+//                     );
+//                     onClose();
+//                   }}
+//                   className="text-red-600 text-sm underline mt-2"
+//                 >
+//                   Deliver Here
+//                 </button>
+//               </div>
+//             ))
+//           )}
+
+//           {/* ================= ADD ADDRESS ================= */}
+//           <button
+//             onClick={() => setShowAdd(true)}
+//             className="w-full bg-red-600 text-white py-2 rounded-lg mt-2"
+//           >
+//             + Add New Address
+//           </button>
+
+//           {/* ================= CLOSE ================= */}
+//           <button
+//             onClick={onClose}
+//             className="w-full mt-2 border py-2 rounded-lg"
+//           >
+//             Close
+//           </button>
+//         </div>
+//       </div>
+
+//       {/* ================= ADD ADDRESS MODAL ================= */}
+//       <AddressModal
+//         isOpen={showAdd}
+//         onClose={() => setShowAdd(false)}
+//         onSave={() => {
+//           setShowAdd(false);
+//           loadAddresses(); // 🔥 refresh list instantly
+//         }}
+//       />
+//     </>
+//   );
+// }
+
+
+
+
+
+import { useEffect, useState } from "react";
 import axios from "axios";
 import AddressModal from "./AddressModal";
 
 export default function LocationModal({ isOpen, onClose, onSelect }) {
   const [addresses, setAddresses] = useState([]);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
   const [editAddress, setEditAddress] = useState(null);
 
-  const API = "http://localhost:4000/api/addresses";
   const token = localStorage.getItem("token");
 
-  const authHeader = token
-    ? { headers: { Authorization: `Bearer ${token}` } }
-    : null;
-
-  /* ---------------- LOAD ADDRESSES ---------------- */
+  /* ================= LOAD ADDRESSES ================= */
   const loadAddresses = async () => {
-    if (token) {
-      try {
-        const res = await axios.get(API, authHeader);
-        setAddresses(res.data.addresses || []);
-        return;
-      } catch (err) {
-        console.error("Backend address error:", err);
-      }
-    }
+  if (!token) {
+    setAddresses([]);
+    return;
+  }
 
-    // Guest user → localStorage
-    const local = JSON.parse(localStorage.getItem("guest_addresses")) || [];
-    setAddresses(local);
-  };
+  try {
+    const res = await axios.get(
+      "http://localhost:4000/api/addresses",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-  useEffect(() => {
-    if (isOpen) loadAddresses();
-  }, [isOpen]);
-
-  /* ---------------- SAVE GUEST ADDRESSES ---------------- */
-  const saveGuestAddresses = (list) => {
-    localStorage.setItem("guest_addresses", JSON.stringify(list));
+    const list = Array.isArray(res.data) ? res.data : [];
     setAddresses(list);
-  };
+  } catch (err) {
+    console.error("LOAD ADDRESS ERROR:", err);
+    setAddresses([]);
+  }
+};
 
-  /* ---------------- ADD / EDIT ADDRESS ---------------- */
-  const handleSaveAddress = async (addr) => {
-    if (token) {
-      if (addr.id) {
-        await axios.put(`${API}/${addr.id}`, addr, authHeader);
-      } else {
-        await axios.post(API, addr, authHeader);
-      }
+  /* ================= DELETE ADDRESS ================= */
+ const deleteAddress = async (id) => {
+  if (!window.confirm("Delete this address?")) return;
+
+  try {
+    await axios.delete(
+      `http://localhost:4000/api/addresses/${id}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // 🔥 REMOVE FROM UI IMMEDIATELY
+    setAddresses((prev) => prev.filter((a) => a.id !== id));
+
+  } catch (err) {
+    console.error("DELETE ADDRESS ERROR:", err);
+    alert("Failed to delete address");
+  }
+};
+
+  /* ================= OPEN MODAL ================= */
+  useEffect(() => {
+    if (isOpen) {
       loadAddresses();
+      document.body.style.overflow = "hidden";
     } else {
-      // Guest
-      if (addr.id) {
-        const updated = addresses.map((a) =>
-          a.id === addr.id ? addr : a
-        );
-        saveGuestAddresses(updated);
-      } else {
-        const newAddr = {
-          ...addr,
-          id: Date.now(),
-          is_default: addresses.length === 0,
-        };
-        saveGuestAddresses([...addresses, newAddr]);
-      }
+      document.body.style.overflow = "auto";
     }
 
-    setShowAddModal(false);
-    setEditAddress(null);
-  };
-
-  /* ---------------- DELETE ADDRESS ---------------- */
-  const handleDeleteAddress = async (addr) => {
-    if (token) {
-      await axios.delete(`${API}/${addr.id}`, authHeader);
-      loadAddresses();
-    } else {
-      let updated = addresses.filter((a) => a.id !== addr.id);
-
-      // If default deleted, make first one default
-      if (addr.is_default && updated.length > 0) {
-        updated[0].is_default = true;
-      }
-
-      saveGuestAddresses(updated);
-    }
-  };
-
-  /* ---------------- SET DEFAULT ---------------- */
-  const handleSetDefault = async (addr) => {
-    if (token) {
-      await axios.put(`${API}/${addr.id}/default`, {}, authHeader);
-    } else {
-      const updated = addresses.map((a) => ({
-        ...a,
-        is_default: a.id === addr.id,
-      }));
-      saveGuestAddresses(updated);
-    }
-
-    onSelect(addr.address);
-    onClose();
-  };
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isOpen, token]);
 
   if (!isOpen) return null;
 
-  const defaultAddress = addresses.find((a) => a.is_default);
-  const otherAddresses = addresses.filter((a) => !a.is_default);
-
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-40">
-        <div className="bg-white w-full max-w-md p-6 rounded-xl">
+      <div className="fixed inset-0 bg-black bg-opacity-40 z-40 flex items-center justify-center">
+        <div className="bg-white w-full max-w-md rounded-xl p-6 max-h-[80vh] overflow-y-auto">
 
-          <h2 className="text-xl font-bold mb-4">Select Delivery Address</h2>
+          <h2 className="text-xl font-bold mb-4">
+            Select Delivery Address
+          </h2>
 
-          {/* ⭐ DEFAULT ADDRESS */}
-          {defaultAddress && (
-            <div className="mb-4 p-3 border rounded-lg bg-green-50">
-              <p className="font-semibold mb-1">Default Address</p>
-              <p>{defaultAddress.address}</p>
-              <p className="text-sm text-gray-600">
-                Pincode: {defaultAddress.pincode}
-              </p>
-
-              <div className="flex gap-4 mt-2 text-sm">
-                <button
-                  onClick={() => handleSetDefault(defaultAddress)}
-                  className="text-red-600 underline"
-                >
-                  Deliver Here
-                </button>
-                <button
-                  onClick={() => {
-                    setEditAddress(defaultAddress);
-                    setShowAddModal(true);
-                  }}
-                  className="text-blue-600"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteAddress(defaultAddress)}
-                  className="text-red-600"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 📦 OTHER ADDRESSES */}
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {otherAddresses.map((addr) => (
+          {/* ================= ADDRESS LIST ================= */}
+          {addresses.length === 0 ? (
+            <p className="text-sm text-gray-500 mb-4">
+              No saved addresses
+            </p>
+          ) : (
+            addresses.map((a) => (
               <div
-                key={addr.id}
-                className="p-3 border rounded-lg bg-gray-50 flex justify-between"
+                key={a.id}
+                className="border rounded-lg p-3 mb-3"
               >
-                <div>
-                  <p className="font-bold">{addr.type || "Address"}</p>
-                  <p>{addr.address}</p>
-                  <p className="text-sm text-gray-600">
-                    Pincode: {addr.pincode}
-                  </p>
+                <p className="font-semibold">{a.name}</p>
+                <p className="text-sm">
+                  {a.address_line1}
+                  {a.city ? `, ${a.city}` : ""}
+                </p>
+                <p className="text-xs text-gray-600">
+                  Pincode: {a.pincode}
+                </p>
 
+                <div className="flex justify-between items-center mt-2 text-sm">
                   <button
-                    onClick={() => handleSetDefault(addr)}
-                    className="text-red-600 underline mt-1"
+                    onClick={() => {
+                      onSelect(a);
+                      localStorage.setItem(
+                        "selected_address",
+                        JSON.stringify(a)
+                      );
+                      onClose();
+                    }}
+                    className="text-red-600 underline"
                   >
                     Deliver Here
                   </button>
-                </div>
 
-                <div className="flex flex-col text-right gap-1">
-                  <button
-                    onClick={() => {
-                      setEditAddress(addr);
-                      setShowAddModal(true);
-                    }}
-                    className="text-blue-600"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteAddress(addr)}
-                    className="text-red-600"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setEditAddress(a);
+                        setShowAdd(true);
+                      }}
+                      className="text-blue-600"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => deleteAddress(a.id)}
+                      className="text-red-600"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+            ))
+          )}
 
-          {/* ➕ ADD ADDRESS */}
+          {/* ================= ADD ADDRESS ================= */}
           <button
             onClick={() => {
               setEditAddress(null);
-              setShowAddModal(true);
+              setShowAdd(true);
             }}
-            className="w-full mt-4 bg-red-600 text-white py-2 rounded-lg"
+            className="w-full bg-red-600 text-white py-2 rounded-lg mt-2"
           >
             + Add New Address
           </button>
 
-          {/* ❌ CLOSE */}
+          {/* ================= CLOSE ================= */}
           <button
-            className="w-full mt-3 border py-2 rounded-lg"
             onClick={onClose}
+            className="w-full mt-2 border py-2 rounded-lg"
           >
             Close
           </button>
         </div>
       </div>
 
-      {/* ADDRESS MODAL */}
+      {/* ================= ADD / EDIT MODAL ================= */}
       <AddressModal
-        isOpen={showAddModal}
+        isOpen={showAdd}
+        editData={editAddress}
         onClose={() => {
-          setShowAddModal(false);
+          setShowAdd(false);
           setEditAddress(null);
         }}
-        onSave={handleSaveAddress}
-        editData={editAddress}
+        onSave={() => {
+          setShowAdd(false);
+          setEditAddress(null);
+          loadAddresses(); // 🔥 instant refresh
+        }}
       />
     </>
   );

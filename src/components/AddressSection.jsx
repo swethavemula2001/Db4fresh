@@ -1,65 +1,151 @@
-import React from "react";
-import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import AddressModal from "./AddressModal";
 
-export default function AddressSection({ onClose, onSelect, onAddAddress }) {
-  const addresses = useSelector((s) => s.address.addresses || []);
+export default function AddressSection({ onClose, onSelect }) {
+  const [addresses, setAddresses] = useState([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [editData, setEditData] = useState(null);
+
+  const token = localStorage.getItem("token");
+
+  /* ================= LOAD ADDRESSES ================= */
+  const loadAddresses = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:4000/api/addresses",
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      setAddresses(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Load address error:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadAddresses();
+  }, []);
+
+  /* ================= DELETE ADDRESS ================= */
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this address?")) return;
+
+    try {
+      await axios.delete(
+        `http://localhost:4000/api/addresses/${id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      // 🔥 instant UI update
+      setAddresses((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete address");
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black bg-opacity-40 flex items-end justify-center">
-      <div className="bg-white w-full max-w-md rounded-t-2xl p-4">
+    <div className="fixed inset-0 z-50 bg-black/40 flex justify-center items-end sm:items-center">
+      <div className="bg-white w-full sm:max-w-md rounded-t-xl sm:rounded-xl max-h-[85vh] overflow-y-auto p-4">
 
         {/* HEADER */}
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold text-lg">Select delivery address</h3>
-          <button onClick={onClose} className="text-xl text-gray-500">✕</button>
+          <h2 className="text-lg font-semibold">
+            Select Delivery Address
+          </h2>
+          <button onClick={onClose} className="text-gray-500">
+            ✕
+          </button>
         </div>
 
         {/* ADDRESS LIST */}
-        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-          {addresses.map((addr) => (
+        <div className="space-y-3">
+          {addresses.map((a) => (
             <div
-              key={addr.id}
-              className={`border rounded-lg p-3 ${
-                Number(addr.is_default) === 1
-                  ? "border-green-500 bg-green-50"
-                  : "border-gray-200"
-              }`}
-            > 
-              <p className="font-medium">{addr.name || "Home"}</p>
+              key={a.id}
+              className="border rounded-lg p-3 bg-gray-50"
+            >
+              <div className="flex justify-between">
+                <div>
+                  <p className="font-semibold">{a.name}</p>
+                  <p className="text-sm text-gray-700">
+                    {a.address_line1}
+                    {a.city && `, ${a.city}`}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Pincode: {a.pincode}
+                  </p>
 
-              <p className="text-sm text-gray-500">
-                {[addr.address_line2, addr.landmark, addr.pincode]
-                  .filter(Boolean)
-                  .join(", ")}
-              </p>
+                  {a.is_default === 1 && (
+                    <span className="text-green-600 text-xs font-medium">
+                      Default
+                    </span>
+                  )}
+                </div>
 
-              <button
-                onClick={() => {
-                  onSelect(addr);
-                  onClose();
-                }}
-                className="mt-2 text-red-600 text-sm font-semibold"
-              >
-                Deliver here
-              </button>
+                <div className="flex flex-col gap-1 text-sm">
+                  <button
+                    onClick={() => {
+                      onSelect(a);
+                      localStorage.setItem(
+                        "selected_address",
+                        JSON.stringify(a)
+                      );
+                      onClose();
+                    }}
+                    className="text-red-600 underline"
+                  >
+                    Deliver Here
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setEditData(a);
+                      setShowAdd(true);
+                    }}
+                    className="text-blue-600"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(a.id)}
+                    className="text-red-500"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
-
-          {addresses.length === 0 && (
-            <p className="text-center text-sm text-gray-500">
-              No saved addresses
-            </p>
-          )}
         </div>
 
         {/* ADD ADDRESS */}
         <button
-          onClick={onAddAddress}
-          className="w-full mt-4 border border-dashed border-red-500 text-red-600 py-2 rounded-lg font-medium"
+          onClick={() => {
+            setEditData(null);
+            setShowAdd(true);
+          }}
+          className="w-full mt-4 bg-red-600 text-white py-2 rounded-lg"
         >
-          + Add new address
+          + Add New Address
         </button>
       </div>
+
+      {/* ADD / EDIT MODAL */}
+      <AddressModal
+        isOpen={showAdd}
+        editData={editData}
+        onClose={() => {
+          setShowAdd(false);
+          setEditData(null);
+        }}
+        onSave={loadAddresses}
+      />
     </div>
   );
 }
