@@ -22,7 +22,7 @@ import mysql from "mysql2/promise";
 const db = mysql.createPool({
   host: "localhost",
   user: "root",
-  password: "Nikhilch@45",
+  password: "*********",
   database: "db4fresh",
   waitForConnections: true,
   connectionLimit: 10,
