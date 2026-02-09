@@ -249,6 +249,7 @@ import db4freshlogo from "../Assets/Db4freshlogo.png";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaHeart } from "react-icons/fa";
 import { FiHome } from "react-icons/fi";
+ 
 
 export default function Header() {
   const [locOpen, setLocOpen] = useState(false);
@@ -391,14 +392,26 @@ export default function Header() {
             <Link to="/" className="flex items-center gap-1 text-sm">
               <FiHome size={16} /> Home
             </Link>
+            {/* HOME */}
+<Link
+  to="/"
+  className="flex items-center gap-1 text-sm ">
+  <FiHome size={16} />
+  Home
+</Link>
+ 
 
             <Link to="/wishlist" className="flex items-center gap-1 text-sm">
               <FaHeart /> {wishlistCount}
             </Link>
+           
+            <Link to="/account" className="text-sm">My Account</Link>
+ 
 
             <Link to="/account" className="text-sm">
               My Account
             </Link>
+            <Link to="/account" className="text-sm">My Account</Link>
 
             <Link to="/cart" className="text-sm">
               Cart ({cartCount})
