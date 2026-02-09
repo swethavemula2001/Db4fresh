@@ -180,10 +180,10 @@ import { useNavigate } from "react-router-dom";
 
 const TABS = [
   { label: "All Orders", value: "all" },
-  { label: "Pending", value: "Pending" },
-  { label: "Delivered", value: "Delivered" },
-  { label: "Cancelled", value: "Cancelled" },
-  { label: "Refunded", value: "Refunded" }
+  { label: "PLACED", value: "PLACED" },
+  { label: "CONFIRMED", value: "CONFIRMED" },
+  { label: "DELIVERED", value: "DELIVERED" },
+  { label: "CANCELLED", value: "CANCELLED" },
 ];
 
 export default function Orders() {
@@ -193,25 +193,30 @@ export default function Orders() {
 
   useEffect(() => {
     fetch("http://localhost:4000/api/orders")
-      .then(res => res.json())
-      .then(data => setOrders(data))
-      .catch(err => console.error(err));
+      .then((res) => res.json())
+      .then((data) => {
+        // 🔒 SAFETY: ensure array
+        setOrders(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error("ORDERS FETCH ERROR:", err);
+        setOrders([]);
+      });
   }, []);
 
-  // 🔹 Filter orders by status
+  /* ================= FILTER ================= */
   const filteredOrders =
     activeTab === "all"
       ? orders
-      : orders.filter(o => o.order_status === activeTab);
+      : orders.filter((o) => o.order_status === activeTab);
 
   return (
     <div className="space-y-6">
-
       <h2 className="text-xl font-semibold">Orders</h2>
 
       {/* ===== STATUS TABS ===== */}
       <div className="flex gap-3 border-b pb-2">
-        {TABS.map(tab => (
+        {TABS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setActiveTab(tab.value)}
@@ -231,7 +236,7 @@ export default function Orders() {
         <thead className="bg-gray-100">
           <tr>
             <th className="p-3 text-left">Order ID</th>
-            <th className="p-3 text-left">User</th>
+            <th className="p-3 text-left">User ID</th>
             <th className="p-3 text-left">Amount</th>
             <th className="p-3 text-left">Payment</th>
             <th className="p-3 text-left">Status</th>
@@ -247,31 +252,37 @@ export default function Orders() {
               </td>
             </tr>
           ) : (
-            filteredOrders.map(order => (
+            filteredOrders.map((order) => (
               <tr key={order.id} className="border-t">
-
                 <td className="p-3 font-medium">
                   #{String(order.id).padStart(4, "0")}
                 </td>
 
-                <td className="p-3">{order.user_name}</td>
+                <td className="p-3">{order.user_id ?? "-"}</td>
 
                 <td className="p-3 font-semibold">
                   ₹{order.total_amount}
                 </td>
 
                 <td className="p-3">
-                  <span className="bg-yellow-100 px-2 py-1 rounded text-sm">
-                    {order.payment_method || "COD"}
+                  <span
+                    className={`px-2 py-1 rounded text-sm ${
+                      order.payment_status === "paid"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {order.payment_status || "pending"}
                   </span>
                 </td>
 
                 <td className="p-3">
                   <span
                     className={`px-2 py-1 rounded text-sm ${
-                      order.order_status === "Delivered"
+                      order.order_status === "DELIVERED"
                         ? "bg-green-100 text-green-700"
-                        : order.order_status === "Pending"
+                        : order.order_status === "PLACED" ||
+                          order.order_status === "CONFIRMED"
                         ? "bg-yellow-100 text-yellow-700"
                         : "bg-red-100 text-red-700"
                     }`}
@@ -288,7 +299,6 @@ export default function Orders() {
                     View
                   </button>
                 </td>
-
               </tr>
             ))
           )}
@@ -297,4 +307,3 @@ export default function Orders() {
     </div>
   );
 }
-

@@ -169,4 +169,23 @@ product-card {
   height: 0 !important;
   display: none !important;
 }
+:root {
+  --bg: #ffffff;
+  --text: #000000;
+  --card: #f5f5f5;
+}
+
+[data-theme="dark"] {
+  --bg: #121212;
+  --text: #ffffff;
+  --card: #1e1e1e;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+.card {
+  background: var(--card);
+}
 

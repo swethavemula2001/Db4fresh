@@ -123,14 +123,20 @@ export default function Dashboard() {
      LOAD DASHBOARD STATS
   ========================= */
   useEffect(() => {
-    console.log("✅ Dashboard component mounted");
+    console.log("✅ Dashboard mounted");
 
     const token = localStorage.getItem("adminToken");
+
+    // 🔒 If no token, go back to login
+    if (!token) {
+      navigate("/admin/login");
+      return;
+    }
 
     const loadStats = async () => {
       try {
         const res = await fetch(
-          "http://localhost:4000/api/admin/stats",
+          "http://127.0.0.1:4000/api/admin/stats",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -139,11 +145,11 @@ export default function Dashboard() {
         );
 
         if (!res.ok) {
-          throw new Error("Stats API failed");
+          throw new Error("Dashboard stats API failed");
         }
 
         const data = await res.json();
-        console.log("📊 Dashboard API Data:", data);
+        console.log("📊 Dashboard stats:", data);
 
         setStats({
           products: Number(data.products) || 0,
@@ -151,15 +157,15 @@ export default function Dashboard() {
           users: Number(data.users) || 0,
           revenue: Number(data.revenue) || 0,
         });
-      } catch (err) {
-        console.error("❌ Dashboard stats error:", err);
+      } catch (error) {
+        console.error("❌ Dashboard error:", error);
       } finally {
         setLoading(false);
       }
     };
 
     loadStats();
-  }, []);
+  }, [navigate]);
 
   /* =========================
      LOADING STATE
@@ -181,14 +187,12 @@ export default function Dashboard() {
         Dashboard Overview
       </h2>
 
-      {/* DEBUG (REMOVE LATER) */}
       <p className="text-xs text-gray-400 mb-4">
         Products: {stats.products} | Orders: {stats.orders} | Users:{" "}
         {stats.users} | Revenue: ₹{stats.revenue}
       </p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-
         <DashboardCard
           title="Products"
           value={stats.products}
@@ -213,7 +217,6 @@ export default function Dashboard() {
           valueClass="text-green-600"
           onClick={() => navigate("/admin/revenue")}
         />
-
       </div>
     </div>
   );

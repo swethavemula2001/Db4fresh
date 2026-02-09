@@ -1,4 +1,5 @@
 
+ 
 // import axios from "axios";
 // import { useState, useEffect, useRef } from "react";
 // import { Link } from "react-router-dom";
@@ -9,19 +10,20 @@
 // import db4freshlogo from "../Assets/Db4freshlogo.png";
 // import { BsThreeDotsVertical } from "react-icons/bs";
 // import { FaHeart } from "react-icons/fa";
-
+// import { FiHome } from "react-icons/fi";
+ 
 // export default function Header() {
 //   const [locOpen, setLocOpen] = useState(false);
 //   const [query, setQuery] = useState("");
 //   const [results, setResults] = useState([]);
 //   const [menuOpen, setMenuOpen] = useState(false);
 //   const [location, setLocation] = useState("Select Location");
-
+ 
 //   const menuRef = useRef(null);
-
+ 
 //   /* ================= USER FROM LOCAL STORAGE ================= */
 //   const user = JSON.parse(localStorage.getItem("user"));
-
+ 
 //   /* ================= CLOSE MENU ON OUTSIDE CLICK ================= */
 //   useEffect(() => {
 //     const handleClickOutside = (e) => {
@@ -32,8 +34,9 @@
 //     document.addEventListener("mousedown", handleClickOutside);
 //     return () =>
 //       document.removeEventListener("mousedown", handleClickOutside);
+//     return () => document.removeEventListener("mousedown", handleClickOutside);
 //   }, []);
-
+ 
 //   /* ================= LOAD DEFAULT ADDRESS ================= */
 //   useEffect(() => {
 //     const loadDefault = async () => {
@@ -43,36 +46,36 @@
 //           setLocation("Select Location");
 //           return;
 //         }
-
+ 
 //         const res = await axios.get(
 //           "http://localhost:4000/api/addresses",
 //           { headers: { Authorization: `Bearer ${token}` } }
 //         );
-
+ 
 //         const list = Array.isArray(res.data)
 //           ? res.data
 //           : res.data.addresses || [];
-
+ 
 //         const def = list.find(
 //           (a) => a.is_default === 1 || a.is_default === true
 //         );
-
+ 
 //         if (def?.address) setLocation(def.address);
 //       } catch (err) {
 //         console.error("Header address error:", err.message);
 //       }
 //     };
-
+ 
 //     loadDefault();
 //   }, [user]);
-
+ 
 //   /* ================= SEARCH (BACKEND BASED) ================= */
 //   useEffect(() => {
 //     if (!query) {
 //       setResults([]);
 //       return;
 //     }
-
+ 
 //     const timeout = setTimeout(async () => {
 //       try {
 //         const res = await axios.get(
@@ -84,35 +87,35 @@
 //         setResults([]);
 //       }
 //     }, 300); // debounce
-
+ 
 //     return () => clearTimeout(timeout);
 //   }, [query]);
-
+ 
 //   /* ================= REDUX DATA ================= */
 //   const cartCount = useSelector((s) =>
 //     s.cart.items.reduce((a, b) => a + b.qty, 0)
 //   );
-
+ 
 //   const wishlistCount = useSelector(
 //     (s) => s.wishlist?.items?.length || 0
 //   );
-
+ 
 //   return (
 //     <>
 //       <OfferStrip />
-
+ 
 //       <header className="bg-red-600 sticky top-0 z-50">
 //         <div className="max-w-7xl mx-auto flex items-center gap-4 px-4 py-2">
-
+ 
 //           {/* LOGO */}
 //           <Link to="/" className="flex-shrink-0">
 //             <img
 //               src={db4freshlogo}
 //               alt="logo"
-//               className="w-10 h-10 rounded-full"
+//               className="w-50 h-10 "
 //             />
 //           </Link>
-
+ 
 //           {/* LOCATION */}
 //           <button
 //             onClick={() => setLocOpen(true)}
@@ -120,7 +123,7 @@
 //           >
 //             {location}
 //           </button>
-
+ 
 //           {/* SEARCH */}
 //           <div className="relative flex-1 hidden sm:block">
 //             <input
@@ -129,7 +132,7 @@
 //               placeholder="Search for milk, fruits, snacks..."
 //               className="w-full px-4 py-2 rounded-xl text-sm outline-none"
 //             />
-
+ 
 //             {query && (
 //               <SearchSuggestions
 //                 results={results}
@@ -137,29 +140,28 @@
 //               />
 //             )}
 //           </div>
-
+ 
 //           {/* RIGHT ACTIONS */}
 //           <div className="flex items-center gap-4 text-white ml-auto">
-//             <Link
+//             {/* HOME */}
+// <Link
 //   to="/"
 //   className="flex items-center gap-1 text-sm ">
 //   <FiHome size={16} />
 //   Home
 // </Link>
-
+ 
 //             <Link to="/wishlist" className="flex items-center gap-1 text-sm">
 //               <FaHeart />
 //               <span>{wishlistCount}</span>
 //             </Link>
-
-//             <Link to="/account" className="text-sm">
-//               My Account
-//             </Link>
-
+           
+//             <Link to="/account" className="text-sm">My Account</Link>
+ 
 //             <Link to="/cart" className="text-sm">
 //               Cart ({cartCount})
 //             </Link>
-
+ 
 //             {/* USER MENU */}
 //             <div className="relative" ref={menuRef}>
 //               <button
@@ -168,7 +170,7 @@
 //               >
 //                 <BsThreeDotsVertical />
 //               </button>
-
+ 
 //               {menuOpen && (
 //                 <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg z-50">
 //                   {user ? (
@@ -176,7 +178,7 @@
 //                       <p className="px-4 py-2 text-xs text-gray-500">
 //                         Hi, {user.name}
 //                       </p>
-
+ 
 //                       <Link
 //                         to="/orders"
 //                         className="block px-4 py-2 hover:bg-gray-100"
@@ -184,7 +186,7 @@
 //                       >
 //                         My Orders
 //                       </Link>
-
+ 
 //                       <Link
 //                         to="/profile"
 //                         className="block px-4 py-2 hover:bg-gray-100"
@@ -192,7 +194,7 @@
 //                       >
 //                         My Profile
 //                       </Link>
-
+ 
 //                       <button
 //                         onClick={() => {
 //                           localStorage.clear();
@@ -217,24 +219,26 @@
 //           </div>
 //         </div>
 //       </header>
-
+ 
 //       {/* LOCATION MODAL */}
 //       {locOpen && (
-//         <LocationModal
-//           isOpen={locOpen}
-//           onClose={() => setLocOpen(false)}
-//           onSelect={(loc) => {
-//             setLocation(loc);
-//             localStorage.setItem("user_location", loc);
-//           }}
-//         />
+//           <LocationModal
+//   isOpen={locOpen}
+//   onClose={() => setLocOpen(false)}
+//   onSelect={(addr) => {
+//     const label = `${addr.address_line1}${addr.city ? ", " + addr.city : ""}`;
+//     setLocation(label); // 🔥 update button text immediately
+//     localStorage.setItem("selected_address", JSON.stringify(addr));
+//   }}
+// />
+
+
 //       )}
 //     </>
 //   );
 // }
-
  
-import axios from "axios";
+ import axios from "axios";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -253,12 +257,13 @@ export default function Header() {
   const [results, setResults] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [location, setLocation] = useState("Select Location");
- 
+
   const menuRef = useRef(null);
- 
-  /* ================= USER FROM LOCAL STORAGE ================= */
+
+  /* ================= USER ================= */
   const user = JSON.parse(localStorage.getItem("user"));
- 
+  const token = user?.token || localStorage.getItem("token");
+
   /* ================= CLOSE MENU ON OUTSIDE CLICK ================= */
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -269,88 +274,94 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () =>
       document.removeEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
- 
-  /* ================= LOAD DEFAULT ADDRESS ================= */
+
+  /* ================= LOAD SELECTED / DEFAULT ADDRESS ================= */
   useEffect(() => {
-    const loadDefault = async () => {
+    const loadAddress = async () => {
+      // 1️⃣ Selected address from localStorage
+      const saved = localStorage.getItem("selected_address");
+      if (saved) {
+        const addr = JSON.parse(saved);
+        setLocation(
+          `${addr.address_line1}${addr.city ? ", " + addr.city : ""}`
+        );
+        return;
+      }
+
+      // 2️⃣ Fallback to default address from backend
+      if (!token) return;
+
       try {
-        const token = user?.token;
-        if (!token) {
-          setLocation("Select Location");
-          return;
-        }
- 
         const res = await axios.get(
           "http://localhost:4000/api/addresses",
           { headers: { Authorization: `Bearer ${token}` } }
         );
- 
-        const list = Array.isArray(res.data)
-          ? res.data
-          : res.data.addresses || [];
- 
+
+        const list = Array.isArray(res.data) ? res.data : [];
         const def = list.find(
           (a) => a.is_default === 1 || a.is_default === true
         );
- 
-        if (def?.address) setLocation(def.address);
+
+        if (def) {
+          localStorage.setItem(
+            "selected_address",
+            JSON.stringify(def)
+          );
+          setLocation(
+            `${def.address_line1}${def.city ? ", " + def.city : ""}`
+          );
+        }
       } catch (err) {
-        console.error("Header address error:", err.message);
+        console.error("Header address load error:", err.message);
       }
     };
- 
-    loadDefault();
-  }, [user]);
- 
-  /* ================= SEARCH (BACKEND BASED) ================= */
+
+    loadAddress();
+  }, [token]);
+
+  /* ================= SEARCH ================= */
   useEffect(() => {
     if (!query) {
       setResults([]);
       return;
     }
- 
+
     const timeout = setTimeout(async () => {
       try {
         const res = await axios.get(
           `http://localhost:4000/api/products/search?q=${query}`
         );
         setResults(res.data || []);
-      } catch (err) {
-        console.error("Search error:", err);
+      } catch {
         setResults([]);
       }
-    }, 300); // debounce
- 
+    }, 300);
+
     return () => clearTimeout(timeout);
   }, [query]);
- 
+
   /* ================= REDUX DATA ================= */
   const cartCount = useSelector((s) =>
     s.cart.items.reduce((a, b) => a + b.qty, 0)
   );
- 
+
   const wishlistCount = useSelector(
     (s) => s.wishlist?.items?.length || 0
   );
- 
+
   return (
     <>
       <OfferStrip />
- 
+
       <header className="bg-red-600 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center gap-4 px-4 py-2">
- 
+
           {/* LOGO */}
           <Link to="/" className="flex-shrink-0">
-            <img
-              src={db4freshlogo}
-              alt="logo"
-              className="w-10 h-10 rounded-full"
-            />
+            <img src={db4freshlogo} alt="logo" className="h-10" />
           </Link>
- 
+
           {/* LOCATION */}
           <button
             onClick={() => setLocOpen(true)}
@@ -358,7 +369,7 @@ export default function Header() {
           >
             {location}
           </button>
- 
+
           {/* SEARCH */}
           <div className="relative flex-1 hidden sm:block">
             <input
@@ -367,7 +378,7 @@ export default function Header() {
               placeholder="Search for milk, fruits, snacks..."
               className="w-full px-4 py-2 rounded-xl text-sm outline-none"
             />
- 
+
             {query && (
               <SearchSuggestions
                 results={results}
@@ -375,9 +386,12 @@ export default function Header() {
               />
             )}
           </div>
- 
+
           {/* RIGHT ACTIONS */}
           <div className="flex items-center gap-4 text-white ml-auto">
+            <Link to="/" className="flex items-center gap-1 text-sm">
+              <FiHome size={16} /> Home
+            </Link>
             {/* HOME */}
 <Link
   to="/"
@@ -388,8 +402,7 @@ export default function Header() {
  
 
             <Link to="/wishlist" className="flex items-center gap-1 text-sm">
-              <FaHeart />
-              <span>{wishlistCount}</span>
+              <FaHeart /> {wishlistCount}
             </Link>
            
             <Link to="/account" className="text-sm">My Account</Link>
@@ -403,7 +416,7 @@ export default function Header() {
             <Link to="/cart" className="text-sm">
               Cart ({cartCount})
             </Link>
- 
+
             {/* USER MENU */}
             <div className="relative" ref={menuRef}>
               <button
@@ -412,7 +425,7 @@ export default function Header() {
               >
                 <BsThreeDotsVertical />
               </button>
- 
+
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg z-50">
                   {user ? (
@@ -420,7 +433,7 @@ export default function Header() {
                       <p className="px-4 py-2 text-xs text-gray-500">
                         Hi, {user.name}
                       </p>
- 
+
                       <Link
                         to="/orders"
                         className="block px-4 py-2 hover:bg-gray-100"
@@ -428,7 +441,7 @@ export default function Header() {
                       >
                         My Orders
                       </Link>
- 
+
                       <Link
                         to="/profile"
                         className="block px-4 py-2 hover:bg-gray-100"
@@ -436,7 +449,7 @@ export default function Header() {
                       >
                         My Profile
                       </Link>
- 
+
                       <button
                         onClick={() => {
                           localStorage.clear();
@@ -461,20 +474,23 @@ export default function Header() {
           </div>
         </div>
       </header>
- 
+
       {/* LOCATION MODAL */}
       {locOpen && (
         <LocationModal
           isOpen={locOpen}
           onClose={() => setLocOpen(false)}
-          onSelect={(loc) => {
-            setLocation(loc);
-            localStorage.setItem("user_location", loc);
+          onSelect={(addr) => {
+            localStorage.setItem(
+              "selected_address",
+              JSON.stringify(addr)
+            );
+            setLocation(
+              `${addr.address_line1}${addr.city ? ", " + addr.city : ""}`
+            );
           }}
         />
       )}
     </>
   );
 }
- 
- 

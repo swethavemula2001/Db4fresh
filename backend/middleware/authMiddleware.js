@@ -54,3 +54,4 @@ export const authorizeRoles = (...allowedRoles) => {
 };
 
 export default requireAuth;
+

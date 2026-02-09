@@ -7,7 +7,7 @@ export const getProfile = (req, res) => {
   const userId = req.user.id;
 
   db.query(
-    "SELECT id, name, email, phone FROM users WHERE id = ?",
+    "SELECT id, name, email ,phone FROM users WHERE id = ?",
     [userId],
     (err, rows) => {
       if (err) return res.status(500).json(err);
